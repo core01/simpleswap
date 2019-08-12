@@ -29,7 +29,7 @@ const CurrencySelect = (props: IProps) => {
             id="grid-first-name" type="text" placeholder="Any amount" value={props.amount}
             onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
               if (!props.readonly) {
-                props.setAmount(e.target.value);
+                props.setAmount(parseFloat(e.target.value));
               }
             }}
             readOnly={props.readonly}
