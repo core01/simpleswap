@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
-import axios from 'axios';
+import axios, { Canceler } from 'axios';
 import CurrencySelectComponent from './components/CurrencySelect';
 import {
   setCurrencies,
@@ -11,6 +11,47 @@ import {
 } from './store/actions';
 import { ICurrency, IState, IProps } from './types';
 import { API_ERROR, PAIR_DISABLED } from './constants';
+
+const getCourses = (firstCurrency: ICurrency, secondCurrency: ICurrency, firstCurrencyAmount: number, setSecondCurrencyAmount: Function, setError: Function) => {
+  if (cancel !== undefined) {
+    cancel();
+  }
+  axios.get('https://api.simpleswap.io/get_min?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol,
+    {
+      cancelToken: new CancelToken((c) => {
+        // An executor function receives a cancel function as a parameter
+        cancel = c;
+      }),
+    })
+    .then(response => response.data)
+    .then(number => {
+      if (!number || number > firstCurrencyAmount) {
+        throw new Error(!number ? PAIR_DISABLED : `The minimum amount: ${number}`);
+      }
+      return axios.get('https://api.simpleswap.io/get_estimated?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol + '&amount=' + firstCurrencyAmount);
+    })
+    .then(response => {
+      const amount = response.data;
+      if (amount === null) {
+        throw new Error(PAIR_DISABLED);
+      } else {
+        setSecondCurrencyAmount(amount);
+      }
+    })
+    .catch((e: Error) => {
+      if (e.toString() !== 'Cancel') {
+        setSecondCurrencyAmount('-');
+        if (e.message) {
+          setError(e.message);
+        } else {
+          setError(API_ERROR);
+        }
+      }
+    });
+};
+
+const CancelToken = axios.CancelToken;
+let cancel: Canceler;
 
 const App: React.FC<IProps> = (props) => {
 
@@ -28,31 +69,7 @@ const App: React.FC<IProps> = (props) => {
 
   useEffect(() => {
     setError('');
-    axios.get('https://api.simpleswap.io/get_min?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol)
-      .then(response => response.data)
-      .then(number => {
-        if (!number || number > firstCurrencyAmount) {
-          throw new Error(!number ? PAIR_DISABLED : `The minimum amount: ${number}`);
-        }
-        return axios.get('https://api.simpleswap.io/get_estimated?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol + '&amount=' + firstCurrencyAmount);
-      })
-      .then(response => {
-        const amount = response.data;
-        if (amount === null) {
-          throw new Error(PAIR_DISABLED);
-        } else {
-          setSecondCurrencyAmount(amount);
-        }
-      })
-      .catch((e: Error) => {
-        setSecondCurrencyAmount('-');
-        if (e.message) {
-          setError(e.message);
-        } else {
-          setError(API_ERROR);
-        }
-      });
-
+    getCourses(firstCurrency, secondCurrency, firstCurrencyAmount, setSecondCurrencyAmount, setError);
   }, [firstCurrency, secondCurrency, firstCurrencyAmount, setError, setSecondCurrencyAmount]);
 
   return (
