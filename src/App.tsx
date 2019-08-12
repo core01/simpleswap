@@ -1,65 +1,61 @@
-import React, { useEffect } from 'react'
-import { connect } from 'react-redux'
-import axios from 'axios'
-import CurrencySelectComponent from './components/CurrencySelect'
+import React, { useEffect } from 'react';
+import { connect } from 'react-redux';
+import axios from 'axios';
+import CurrencySelectComponent from './components/CurrencySelect';
 import {
   setCurrencies,
   setError,
   setFirstCurrency,
   setFirstCurrencyAmount, setSecondCurrency,
   setSecondCurrencyAmount,
-} from './store/actions'
-import { ICurrency, IState, IProps } from './types'
+} from './store/actions';
+import { ICurrency, IState, IProps } from './types';
+import { API_ERROR, PAIR_DISABLED } from './constants';
 
 const App: React.FC<IProps> = (props) => {
 
-  const { setCurrencies, firstCurrency, secondCurrency, firstCurrencyAmount, setError, setSecondCurrencyAmount } = props
+  const { setCurrencies, firstCurrency, secondCurrency, firstCurrencyAmount, setError, setSecondCurrencyAmount } = props;
 
   useEffect(() => {
     axios.get('https://api.simpleswap.io/get_all_currencies')
       .then(response => {
-        let currencies = response.data.sort((a: any, b: any) => a.name.localeCompare(b.name))
-
-        setCurrencies(currencies)
+        setCurrencies(response.data.sort((a: ICurrency, b: ICurrency) => a.name.localeCompare(b.name)));
       })
-      .catch((error) => {
-        console.log(error)
-      })
-  }, [setCurrencies])
+      .catch(() => {
+        setError(API_ERROR);
+      });
+  }, [setCurrencies, setError]);
 
   useEffect(() => {
-    setError('')
+    setError('');
     axios.get('https://api.simpleswap.io/get_min?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol)
+      .then(response => response.data)
+      .then(number => {
+        if (number === null) {
+          throw new Error(PAIR_DISABLED);
+        } else if (number > firstCurrencyAmount) {
+          throw new Error('The minimum amount: ' + number);
+        }
+        return axios.get('https://api.simpleswap.io/get_estimated?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol + '&amount=' + firstCurrencyAmount);
+      })
       .then(response => {
-        if (response.data !== null) {
-          const min = parseFloat(response.data)
-          if (firstCurrencyAmount > min) {
-            axios.get('https://api.simpleswap.io/get_estimated?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol + '&amount=' + firstCurrencyAmount)
-              .then(response => {
-                if (response.data !== null) {
-                  setSecondCurrencyAmount(response.data)
-                } else {
-                  setSecondCurrencyAmount('-')
-                  setError('This pair is disabled now. Please try again later')
-                }
-              })
-              .catch((error) => {
-                console.log(error)
-              })
-          } else {
-            setSecondCurrencyAmount('-')
-            setError('The minimum amount: ' + min)
-          }
+        const amount = response.data;
+        if (amount === null) {
+          throw new Error(PAIR_DISABLED);
         } else {
-          setSecondCurrencyAmount('-')
-          setError('This pair is disabled now. Please try again later')
+          setSecondCurrencyAmount(amount);
         }
       })
-      .catch((error) => {
-        console.log(error)
-      })
+      .catch((e: Error) => {
+        setSecondCurrencyAmount('-');
+        if (e.message) {
+          setError(e.message);
+        } else {
+          setError(API_ERROR);
+        }
+      });
 
-  }, [firstCurrency, secondCurrency, firstCurrencyAmount, setError, setSecondCurrencyAmount])
+  }, [firstCurrency, secondCurrency, firstCurrencyAmount, setError, setSecondCurrencyAmount]);
 
   return (
     <div className="App">
@@ -93,10 +89,17 @@ const App: React.FC<IProps> = (props) => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-const mapStateToProps = (state: IState) => {
+const mapStateToProps = (state: IState): {
+  currencies: ICurrency[];
+  error: string;
+  firstCurrency: ICurrency;
+  secondCurrency: ICurrency;
+  firstCurrencyAmount: number;
+  secondCurrencyAmount: number | string;
+} => {
   return {
     currencies: state.currencies.list,
     error: state.error.error,
@@ -104,29 +107,36 @@ const mapStateToProps = (state: IState) => {
     secondCurrency: state.currencies.second,
     firstCurrencyAmount: state.currencies.firstAmount,
     secondCurrencyAmount: state.currencies.secondAmount,
-  }
-}
+  };
+};
 
-const mapDispatchToProps = (dispatch: Function) => {
+const mapDispatchToProps = (dispatch: Function): {
+  setCurrencies: Function;
+  setError: Function;
+  setFirstCurrency: Function;
+  setSecondCurrency: Function;
+  setFirstCurrencyAmount: Function;
+  setSecondCurrencyAmount: Function;
+} => {
   return {
     setCurrencies: (currencies: ICurrency[]) => {
-      dispatch(setCurrencies(currencies))
+      dispatch(setCurrencies(currencies));
     },
     setError: (error: string) => {
-      dispatch(setError(error))
+      dispatch(setError(error));
     },
     setFirstCurrency: (currency: ICurrency) => {
-      dispatch(setFirstCurrency(currency))
+      dispatch(setFirstCurrency(currency));
     },
     setSecondCurrency: (currency: ICurrency) => {
-      dispatch(setSecondCurrency(currency))
+      dispatch(setSecondCurrency(currency));
     },
     setFirstCurrencyAmount: (amount: number) => {
-      dispatch(setFirstCurrencyAmount(amount))
+      dispatch(setFirstCurrencyAmount(amount));
     },
     setSecondCurrencyAmount: (amount: number) => {
-      dispatch(setSecondCurrencyAmount(amount))
+      dispatch(setSecondCurrencyAmount(amount));
     },
-  }
-}
-export default connect(mapStateToProps, mapDispatchToProps)(App)
+  };
+};
+export default connect(mapStateToProps, mapDispatchToProps)(App);

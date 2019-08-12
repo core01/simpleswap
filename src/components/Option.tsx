@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 
 import { ICurrency } from '../types';
 
@@ -6,10 +6,8 @@ interface Props {
   currency: ICurrency
 }
 
-const Option: React.FC<Props> = (props) => {
+export default (props: Props) => {
   return (
     <option value={props.currency.symbol}>{props.currency.name}</option>
-  )
+  );
 }
-
-export default Option

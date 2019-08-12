@@ -1,7 +1,7 @@
-import React from 'react'
-import { ICurrency } from '../types'
+import React from 'react';
+import { ICurrency } from '../types';
 
-import OptionComponent from './Option'
+import OptionComponent from './Option';
 
 interface IProps {
   currencies: ICurrency[];
@@ -16,32 +16,6 @@ interface IProps {
 
 const CurrencySelect = (props: IProps) => {
 
-  const findCurrencyBySymbol = (symbol: string) => {
-    return props.currencies.filter((currency: ICurrency) => currency.symbol === symbol)[0]
-  }
-
-  const handleCurrency = (e: any) => {
-    const currency = findCurrencyBySymbol(e.target.value)
-    props.setCurrency(currency)
-  }
-
-  const handleInput = (e: any) => {
-    if (!props.readonly) {
-      props.setAmount(e.target.value)
-    }
-  }
-
-  const selectContent = props.currencies.map((currency: ICurrency) => {
-    return (<OptionComponent currency={currency} key={currency.symbol}/>)
-  })
-
-  let textError = null
-  if (props.error && props.error.length > 0) {
-    textError = (
-      <p className="text-red-500 text-xs italic">{props.error}</p>
-    )
-  }
-
   return (
     <div className="md:w-1/2 w-full md:px-10">
       <div className="w-full">
@@ -53,7 +27,11 @@ const CurrencySelect = (props: IProps) => {
           <input
             className="appearance-none block w-full bg-gray-200 border border-r-1 text-gray-700 py-2 px-3 mb-3 rounded-l leading-tight focus:outline-none focus:bg-white"
             id="grid-first-name" type="text" placeholder="Any amount" value={props.amount}
-            onChange={handleInput}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
+              if (!props.readonly) {
+                props.setAmount(e.target.value);
+              }
+            }}
             readOnly={props.readonly}
           />
         </div>
@@ -62,10 +40,14 @@ const CurrencySelect = (props: IProps) => {
             <select
               className="block appearance-none w-full bg-gray-200 border border-l-1 text-gray-700 py-2 px-3 pr-8 rounded-r leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
               id="grid-state"
-              onChange={handleCurrency}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>): void => {
+                props.setCurrency(props.currencies.filter((currency: ICurrency) => currency.symbol === e.target.value)[0]);
+              }}
               value={props.currency.symbol}
             >
-              {selectContent}
+              {props.currencies.map((currency: ICurrency) => {
+                return (<OptionComponent currency={currency} key={currency.symbol}/>);
+              })}
             </select>
             <div
               className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -78,11 +60,15 @@ const CurrencySelect = (props: IProps) => {
           </div>
         </div>
         <div className="w-full">
-          {textError}
+
+          {(props.error && props.error.length > 0) ? (
+            <p className="text-red-500 text-xs italic">{props.error}</p>
+          ) : null
+          }
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CurrencySelect
+export default CurrencySelect;

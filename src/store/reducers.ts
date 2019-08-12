@@ -1,4 +1,4 @@
-import { combineReducers } from 'redux'
+import { combineReducers } from 'redux';
 import {
   SET_CURRENCIES,
   SET_SECOND_CURRENCY_AMOUNT,
@@ -6,11 +6,11 @@ import {
   SET_FIRST_CURRENCY_AMOUNT,
   SET_FIRST_CURRENCY,
   SET_SECOND_CURRENCY,
-} from './actions'
+} from './actions';
 
 const initialErrorState = {
   error: '',
-}
+};
 
 const initialCurrenciesState = {
   list: [],
@@ -24,37 +24,37 @@ const initialCurrenciesState = {
   },
   firstAmount: 1,
   secondAmount: '',
-}
+};
 
 function currenciesReducer (state = initialCurrenciesState, action: any) {
   switch (action.type) {
     case SET_CURRENCIES:
       state = {
         ...state, list: action.payload,
-      }
-      break
+      };
+      break;
     case SET_FIRST_CURRENCY:
       state = {
         ...state, first: action.payload,
-      }
-      break
+      };
+      break;
     case SET_SECOND_CURRENCY:
       state = {
         ...state, second: action.payload,
-      }
-      break
+      };
+      break;
     case SET_FIRST_CURRENCY_AMOUNT:
       state = {
         ...state, firstAmount: action.payload,
-      }
-      break
+      };
+      break;
     case SET_SECOND_CURRENCY_AMOUNT:
       state = {
         ...state, secondAmount: action.payload,
-      }
-      break
+      };
+      break;
   }
-  return state
+  return state;
 }
 
 function errorReducer (state = initialErrorState, action: any) {
@@ -62,15 +62,15 @@ function errorReducer (state = initialErrorState, action: any) {
     case SET_ERROR:
       state = {
         ...state, error: action.payload,
-      }
-      break
+      };
+      break;
   }
-  return state
+  return state;
 }
 
 const App = combineReducers({
   currencies: currenciesReducer,
   error: errorReducer,
-})
+});
 
-export default App
+export default App;
