@@ -31,10 +31,8 @@ const App: React.FC<IProps> = (props) => {
     axios.get('https://api.simpleswap.io/get_min?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol)
       .then(response => response.data)
       .then(number => {
-        if (number === null) {
-          throw new Error(PAIR_DISABLED);
-        } else if (number > firstCurrencyAmount) {
-          throw new Error('The minimum amount: ' + number);
+        if (!number || number > firstCurrencyAmount) {
+          throw new Error(!number ? PAIR_DISABLED : `The minimum amount: ${number}`);
         }
         return axios.get('https://api.simpleswap.io/get_estimated?currency_from=' + firstCurrency.symbol + '&currency_to=' + secondCurrency.symbol + '&amount=' + firstCurrencyAmount);
       })
